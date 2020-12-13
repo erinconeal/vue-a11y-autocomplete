@@ -5,22 +5,6 @@
       <label for="destination">
         <span>Destination</span>
       </label>
-      <select
-        name="destination"
-        aria-hidden="true"
-        tabindex="-1"
-        class="visually-hidden"
-        v-model="selected"
-      >
-        <option value="">Please select</option>
-        <option
-          v-for="option in results"
-          :key="option.code"
-          :value="option.code"
-        >
-          {{ option.name }}
-        </option>
-      </select>
       <div class="autocomplete">
         <input
           aria-owns="autocomplete-options--destination"
@@ -67,7 +51,10 @@
           </li>
         </ul>
         <div aria-live="polite" role="status" class="visually-hidden">
-          {{ results.length }} results available.
+          <span v-if="results.length === 0">No results.</span>
+          <span v-else>
+            {{ results.length }} results available.
+          </span>
         </div>
       </div>
       <button type="button" @click="submit">Submit</button>
@@ -79,13 +66,13 @@
 /* eslint-disable no-console */
 /* eslint-disable max-len */
 /* eslint-disable no-plusplus */
-import countries from "../countries";
+import countries from '../countries';
 
 export default {
-  name: "HelloWorld",
+  name: 'HelloWorld',
   data() {
     return {
-      selected: "",
+      selected: '',
       keys: {
         enter: 13,
         esc: 27,
@@ -97,8 +84,8 @@ export default {
         right: 39,
         shift: 16,
       },
-      inputValue: "",
-      activeOptionId: "",
+      inputValue: '',
+      activeOptionId: '',
       isFocused: false,
       menuOpen: false,
     };
@@ -143,16 +130,17 @@ export default {
           this.$refs.destination.focus();
       }
     },
-    onOptionEnter(t) {
-      this.isOptionSelected() && this.selectActiveOption();
-      t.preventDefault();
-    },
-    onOptionSpace() {
-      this.isOptionSelected() &&
-        (this.selectActiveOption(), t.preventDefault());
-    },
+    // onOptionEnter(t) {
+    //   this.isOptionSelected() && this.selectActiveOption();
+    //   t.preventDefault();
+    // },
+    // onOptionSpace(t) {
+    //   this.isOptionSelected() &&
+    //   this.selectActiveOption();
+    //   t.preventDefault();
+    // },
     onOptionEscape() {
-      this.clearOptions();
+      // this.clearOptions();
       this.hideMenu();
       this.focusTextBox();
     },
@@ -214,7 +202,7 @@ export default {
       }
     },
     onTextBoxDownPressed(e) {
-      console.log("onTextBoxDownPressed", e);
+      console.log('onTextBoxDownPressed', e);
       let option;
       let options;
       const value = this.inputValue.trim();
@@ -263,7 +251,7 @@ export default {
       }
     },
     onTextBoxType(e) {
-      console.log("onTextBoxType", e);
+      console.log('onTextBoxType', e);
       // only show options if user typed something
       const value = event.target.value;
       if (value.trim().length > 0) {
@@ -284,7 +272,7 @@ export default {
       // the server uses to process the data
       this.updateSelectBox();
     },
-    getOptions(value) {
+    getOptions() {
       const matches = [];
 
       // Loop through each of the option elements
@@ -299,22 +287,22 @@ export default {
 
       return matches;
     },
-    getAllOptions() {
-      for (
-        var t, matches = [], option = this.select.find("option"), i = 0;
-        i < option.length;
-        i++
-      ) {
-        (t = option.eq(i)).val().trim().length > 0 &&
-          matches.push({
-            text: t.text(),
-            value: t.val(),
-          });
-      }
-      return matches;
-    },
+    // getAllOptions() {
+    //   for (
+    //     let t, matches = [], option = this.select.find('option'), i = 0;
+    //     i < option.length;
+    //     i++
+    //   ) {
+    //     (t = option.eq(i)).val().trim().length > 0 &&
+    //       matches.push({
+    //         text: t.text(),
+    //         value: t.val(),
+    //       });
+    //   }
+    //   return matches;
+    // },
     getFirstOption() {
-      return document.getElementById("autocomplete-options--destination")
+      return document.getElementById('autocomplete-options--destination')
         .firstChild;
     },
     getPreviousOption() {
@@ -330,11 +318,11 @@ export default {
         const activeOption = this.getOptionById(this.activeOptionId);
 
         // unselect the option
-        activeOption.setAttribute("aria-selected", "false");
+        activeOption.setAttribute('aria-selected', 'false');
       }
 
       // set new option to selected
-      option.setAttribute("aria-selected", "true");
+      option.setAttribute('aria-selected', 'true');
 
       // If the option isn’t visible within the menu
       // if (!this.isElementVisible(option.parent(), option)) {
@@ -357,16 +345,16 @@ export default {
       this.menuOpen = true;
     },
     updateStatus() {},
-    updateSelectBox() {
-      const t = this.inputValue.trim();
-      const matchingSelectOption = this.getMatchingOption(t);
-      // TODO: set this.selected value
-      // matchingSelectOption ? this.select.val(matchingSelectOption.value) : this.select.val('');
-    },
+    // updateSelectBox() {
+    //   const t = this.inputValue.trim();
+    //   const matchingSelectOption = this.getMatchingOption(t);
+    //   // TODO: set this.selected value
+    //   // matchingSelectOption ? this.select.val(matchingSelectOption.value) : this.select.val('');
+    // },
     hideMenu() {
       this.menuOpen = false;
-      this.activeOptionId = "";
-      this.clearOptions();
+      this.activeOptionId = '';
+      // this.clearOptions();
     },
     removeTextBoxFocus() {
       this.isFocused = false;
@@ -376,7 +364,7 @@ export default {
     },
     getMatchingOption(option) {
       let matchedOption = null;
-      const options = this.select.find("options");
+      const options = this.select.find('options');
       for (let i = 0; i < options.length; i++) {
         if (options[i].text.toLowerCase() === option.toLowerCase()) {
           matchedOption = options[i];
@@ -392,7 +380,7 @@ export default {
       this.$refs.destination.focus();
     },
     selectOption(option) {
-      const value = option.getAttribute("data-option-value");
+      const value = option.getAttribute('data-option-value');
       this.setValue(value);
       this.hideMenu();
       this.focusTextBox();
@@ -402,35 +390,34 @@ export default {
       this.selectOption(option);
     },
     onDocumentClick(e) {
-      console.log("clicking on document", e.target.closest("div.autocomplete"));
-      if (!e.target.closest("div.autocomplete")) {
-        console.log("clicked outside of autocomplete");
+      console.log('clicking on document', e.target.closest('div.autocomplete'));
+      if (!e.target.closest('div.autocomplete')) {
+        console.log('clicked outside of autocomplete');
         this.hideMenu();
         this.removeTextBoxFocus();
       }
     },
-    onTextBoxClick(t) {
-      this.clearOptions();
-      const options = this.getAllOptions();
-      this.buildMenu(options),
-        this.updateStatus(options.length),
-        this.showMenu(),
-        typeof t.currentTarget.select === "function" &&
-          t.currentTarget.select();
+    onTextBoxClick() {
+      // this.clearOptions();
+      // const options = this.getAllOptions();
+      // this.buildMenu(options);
+      // this.updateStatus(options.length);
+      this.showMenu();
+      // typeof t.currentTarget.select === 'function' && t.currentTarget.select();
     },
     onTextBoxFocus() {
       this.isFocused = true;
     },
     onArrowClick() {},
-    clearOptions() {
-      console.log("clearOptions called");
-    },
+    // clearOptions() {
+    //   console.log('clearOptions called');
+    // },
   },
   mounted() {
-    document.addEventListener("click", this.onDocumentClick);
+    document.addEventListener('click', this.onDocumentClick);
   },
   beforeDestroy() {
-    document.removeEventListener("click", this.onDocumentClick);
+    document.removeEventListener('click', this.onDocumentClick);
   },
 };
 </script>
@@ -468,6 +455,7 @@ a {
   position: absolute !important;
   width: 1px !important;
 }
+
 .autocomplete {
   position: relative;
 }
@@ -483,6 +471,7 @@ a {
   padding: 0.5em;
   border: 2px solid #718096;
 }
+
 .autocomplete svg {
   position: absolute;
   right: 0.6em;
