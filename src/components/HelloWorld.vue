@@ -42,10 +42,8 @@
             :key="option.code"
             role="option"
             tabindex="-1"
-            aria-selected="true"
-            :data-option-value="option.code"
             :id="`autocomplete-option--${option.code}`"
-            @click="onOptionClick"
+            @click="onOptionClick(option)"
           >
             {{ option.name }}
           </li>
@@ -72,7 +70,6 @@ export default {
   name: 'HelloWorld',
   data() {
     return {
-      selected: '',
       keys: {
         enter: 13,
         esc: 27,
@@ -212,10 +209,10 @@ export default {
       */
       if (value.length === 0 || this.isExactMatch(value)) {
         // get options based on the value
-        options = this.getAllOptions();
+        // options = this.getAllOptions();
 
         // build the menu based on the options
-        this.buildMenu(options);
+        // this.buildMenu(options);
 
         // show the menu
         this.showMenu();
@@ -324,6 +321,7 @@ export default {
       // set new option to selected
       option.setAttribute('aria-selected', 'true');
 
+      // TODO
       // If the option isn’t visible within the menu
       // if (!this.isElementVisible(option.parent(), option)) {
       //   // make it visible by setting its position inside the menu
@@ -331,7 +329,7 @@ export default {
       // }
 
       // store new option for next time
-      this.activeOptionId = option[0].id;
+      this.activeOptionId = option.id;
 
       // focus the option
       option.focus();
@@ -364,29 +362,29 @@ export default {
     },
     getMatchingOption(option) {
       let matchedOption = null;
-      const options = this.select.find('options');
+      const options = countries;
       for (let i = 0; i < options.length; i++) {
-        if (options[i].text.toLowerCase() === option.toLowerCase()) {
+        if (options[i].name.toLowerCase() === option.toLowerCase()) {
           matchedOption = options[i];
           break;
         }
       }
       return matchedOption;
     },
-    setValue() {
+    setValue(value) {
       // populates the text box and hidden select box
+      console.log('value to set', value);
+      this.inputValue = value.name;
     },
     focusTextBox() {
       this.$refs.destination.focus();
     },
     selectOption(option) {
-      const value = option.getAttribute('data-option-value');
-      this.setValue(value);
+      this.setValue(option);
       this.hideMenu();
       this.focusTextBox();
     },
-    onOptionClick(e) {
-      const option = e.currentTarget;
+    onOptionClick(option) {
       this.selectOption(option);
     },
     onDocumentClick(e) {
