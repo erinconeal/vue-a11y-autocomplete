@@ -20,7 +20,7 @@
           @keydown="onTextBoxKeyDown"
           @click="onTextBoxClick"
           @focus="onTextBoxFocus"
-          :value="inputValue"
+          v-model="inputValue"
           :class="{ 'autocomplete-isFocused': isFocused }"
         />
         <svg
@@ -43,7 +43,8 @@
             role="option"
             tabindex="-1"
             :id="`autocomplete-option--${option.code}`"
-            @click="onOptionClick(option)"
+            :data-option-value="option.code"
+            @click="onOptionClick"
           >
             {{ option.name }}
           </li>
@@ -85,13 +86,14 @@ export default {
       activeOptionId: '',
       isFocused: false,
       menuOpen: false,
+      results: [],
     };
   },
-  computed: {
-    results() {
-      return countries.filter(country => country.name.toLowerCase().includes(this.inputValue.toLowerCase()));
-    },
-  },
+  // computed: {
+  //   results() {
+  //     return countries.filter(country => country.name.toLowerCase().includes(this.inputValue.toLowerCase()));
+  //   },
+  // },
   methods: {
     submit() {},
     onMenuKeyDown(t) {
@@ -127,46 +129,53 @@ export default {
           this.$refs.destination.focus();
       }
     },
-    // onOptionEnter(t) {
-    //   this.isOptionSelected() && this.selectActiveOption();
-    //   t.preventDefault();
-    // },
-    // onOptionSpace(t) {
-    //   this.isOptionSelected() &&
-    //   this.selectActiveOption();
-    //   t.preventDefault();
-    // },
+    onOptionEnter(e) {
+      if (this.isOptionSelected()) {
+        this.selectActiveOption();
+      }
+      // we don't want form to submit
+      e.preventDefault();
+    },
+    onOptionSpace(e) {
+      if (this.isOptionSelected()) {
+        this.selectActiveOption();
+        // we don't want a space to be added to text box
+        e.preventDefault();
+      }
+    },
     onOptionEscape() {
-      // this.clearOptions();
+      this.clearOptions();
       this.hideMenu();
       this.focusTextBox();
     },
     onOptionDownArrow(t) {
       const nextOption = this.getNextOption();
-      if (nextOption[0]) {
+      if (nextOption) {
         this.highlightOption(nextOption);
       }
       t.preventDefault();
     },
-    onOptionUpArrow(t) {
-      let option;
-      // eslint-disable-next-line no-unused-expressions
-      this.isOptionSelected() &&
-        ((option = this.getPreviousOption()),
-        option[0]
-          ? this.highlightOption(option)
-          : (this.focusTextBox(), this.hideMenu()));
-      t.preventDefault();
+    onOptionUpArrow(e) {
+      if (this.isOptionSelected()) {
+        const previousOption = this.getPreviousOption();
+        if (previousOption) {
+          this.highlightOption(previousOption);
+        } else {
+          this.focusTextBox();
+          this.hideMenu();
+        }
+      }
+      e.preventDefault();
     },
     isOptionSelected() {
       return this.activeOptionId;
     },
     selectActiveOption() {
-      const t = this.getActiveOption();
-      this.selectOption(t);
+      const activeOption = this.getActiveOption();
+      this.selectOption(activeOption);
     },
     getActiveOption() {
-      return `#${this.activeOptionId}`;
+      return document.getElementById(this.activeOptionId);
     },
     onTextBoxKeyUp(e) {
       switch (e.keyCode) {
@@ -199,7 +208,7 @@ export default {
       }
     },
     onTextBoxDownPressed(e) {
-      console.log('onTextBoxDownPressed', e);
+      console.log('down arrow pressed on text box', e);
       let option;
       let options;
       const value = this.inputValue.trim();
@@ -209,16 +218,17 @@ export default {
       */
       if (value.length === 0 || this.isExactMatch(value)) {
         // get options based on the value
-        // options = this.getAllOptions();
+        options = this.getAllOptions();
 
         // build the menu based on the options
-        // this.buildMenu(options);
+        this.buildMenu(options);
 
         // show the menu
         this.showMenu();
 
         // retrieve the first option in the menu
         option = this.getFirstOption();
+        console.log('option', option);
 
         // highlight the first option
         this.highlightOption(option);
@@ -230,6 +240,7 @@ export default {
       } else {
         // get options based on the value
         options = this.getOptions(value);
+        console.log('options', options);
 
         // if there are options
         if (options.length > 0) {
@@ -248,9 +259,9 @@ export default {
       }
     },
     onTextBoxType(e) {
-      console.log('onTextBoxType', e);
       // only show options if user typed something
-      const value = event.target.value;
+      const value = e.target.value;
+
       if (value.trim().length > 0) {
         // get options based on value
         const options = this.getOptions(value.trim().toLowerCase());
@@ -260,44 +271,40 @@ export default {
 
         // show the menu
         this.showMenu();
-
-        // update the live region
-        this.updateStatus(options.length);
       }
 
       // update the select box value which
       // the server uses to process the data
-      this.updateSelectBox();
+      // this.updateSelectBox();
     },
-    getOptions() {
+    getOptions(inputValue) {
+      // return countries.filter(country => country.name.toLowerCase().includes(this.inputValue.toLowerCase()));
       const matches = [];
 
       // Loop through each of the option elements
-      // this.select.find('option').each(function(i, el) {
-      //   // if the option has a value and the option’s text node matches the user-typed value
-      //   if(el.val().trim().length > 0 && el.text().toLowerCase().indexOf(value.toLowerCase()) > -1) {
-
-      //     // push an object representation to the matches array
-      //     matches.push({ text: el.text(), value: el.val() });
-      //   }
-      // });
-
+      for (let i = 0; i < countries.length; i++) {
+        const countryObj = countries[i];
+        // if the option has a value and the option’s text node matches the user-typed value
+        if (countryObj.code.trim().length > 0 && countryObj.name.toLowerCase().includes(inputValue.toLowerCase())) {
+          // push an object representation to the matches array
+          matches.push(countryObj);
+        }
+      }
       return matches;
     },
-    // getAllOptions() {
-    //   for (
-    //     let t, matches = [], option = this.select.find('option'), i = 0;
-    //     i < option.length;
-    //     i++
-    //   ) {
-    //     (t = option.eq(i)).val().trim().length > 0 &&
-    //       matches.push({
-    //         text: t.text(),
-    //         value: t.val(),
-    //       });
-    //   }
-    //   return matches;
-    // },
+    getAllOptions() {
+      const filtered = [];
+      const options = countries;
+      let option;
+      for (let i = 0; i < options.length; i++) {
+        option = options[i];
+        const value = option.code;
+        if (value.trim().length > 0) {
+          filtered.push(option);
+        }
+      }
+      return filtered;
+    },
     getFirstOption() {
       return document.getElementById('autocomplete-options--destination')
         .firstChild;
@@ -336,13 +343,26 @@ export default {
     },
     isElementVisible() {},
     getOptionById(id) {
-      return `#${id}`;
+      return document.getElementById(id);
     },
-    buildMenu() {},
+    buildMenu(options) {
+      this.clearOptions();
+      this.activeOptionId = '';
+
+      // if (options.length) {
+      //   for (let i = 0; i < options.length; i++) {
+      //     this.menu.append(this.getOptionHtml(i, options[i]));
+      //   }
+      // } else {
+      //   this.menu.append(this.getNoResultsOptionHtml());
+      // }
+      this.results = options;
+      // TODO: scroll to top of menu
+      // this.menu.scrollTop(this.menu.scrollTop());
+    },
     showMenu() {
       this.menuOpen = true;
     },
-    updateStatus() {},
     // updateSelectBox() {
     //   const t = this.inputValue.trim();
     //   const matchingSelectOption = this.getMatchingOption(t);
@@ -352,7 +372,7 @@ export default {
     hideMenu() {
       this.menuOpen = false;
       this.activeOptionId = '';
-      // this.clearOptions();
+      this.clearOptions();
     },
     removeTextBoxFocus() {
       this.isFocused = false;
@@ -371,20 +391,32 @@ export default {
       }
       return matchedOption;
     },
-    setValue(value) {
+    setValue(val) {
       // populates the text box and hidden select box
-      console.log('value to set', value);
-      this.inputValue = value.name;
+      console.log('value to set', val);
+      // this.select.val(val); // set the select's value to val
+      const text = this.getOption(val).name;
+      if (val.trim().length > 0) {
+        this.inputValue = text;
+      } else {
+        this.inputValue = '';
+      }
+    },
+    getOption(value) {
+      return countries.find(country => country.code === value);
     },
     focusTextBox() {
       this.$refs.destination.focus();
     },
     selectOption(option) {
-      this.setValue(option);
+      console.log('option to set', option);
+      const value = option.getAttribute('data-option-value');
+      this.setValue(value);
       this.hideMenu();
       this.focusTextBox();
     },
-    onOptionClick(option) {
+    onOptionClick(e) {
+      const option = e.target;
       this.selectOption(option);
     },
     onDocumentClick(e) {
@@ -393,23 +425,31 @@ export default {
         console.log('clicked outside of autocomplete');
         this.hideMenu();
         this.removeTextBoxFocus();
+      } else {
+        return e;
       }
+      return null;
     },
     onTextBoxClick() {
-      // this.clearOptions();
-      // const options = this.getAllOptions();
-      // this.buildMenu(options);
-      // this.updateStatus(options.length);
+      this.clearOptions();
+      const options = this.getAllOptions();
+      this.buildMenu(options);
       this.showMenu();
       // typeof t.currentTarget.select === 'function' && t.currentTarget.select();
     },
     onTextBoxFocus() {
       this.isFocused = true;
     },
-    onArrowClick() {},
-    // clearOptions() {
-    //   console.log('clearOptions called');
-    // },
+    onArrowClick() {
+      this.clearOptions();
+      const options = this.getAllOptions();
+      this.buildMenu(options);
+      this.showMenu();
+      this.focusTextBox();
+    },
+    clearOptions() {
+      this.results = [];
+    },
   },
   mounted() {
     document.addEventListener('click', this.onDocumentClick);
