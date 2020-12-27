@@ -72,15 +72,14 @@ export default {
   data() {
     return {
       keys: {
-        enter: 13,
-        esc: 27,
-        space: 32,
-        up: 38,
-        down: 40,
-        tab: 9,
-        left: 37,
-        right: 39,
-        shift: 16,
+        enter: 'Enter',
+        esc: 'Escape',
+        space: 'Space',
+        up: 'ArrowUp',
+        down: 'ArrowDown',
+        tab: 'Tab',
+        left: 'ArrowLeft',
+        right: 'ArrowRight',
       },
       inputValue: '',
       activeOptionId: '',
@@ -95,9 +94,11 @@ export default {
   //   },
   // },
   methods: {
-    submit() {},
+    submit() {
+      console.log('value to submit');
+    },
     onMenuKeyDown(t) {
-      switch (t.keyCode) {
+      switch (t.code) {
         // If the first option is focused, set focus to the text box.
         // Otherwise set focus to the previous option.
         case this.keys.up:
@@ -178,7 +179,7 @@ export default {
       return document.getElementById(this.activeOptionId);
     },
     onTextBoxKeyUp(e) {
-      switch (e.keyCode) {
+      switch (e.code) {
         case this.keys.esc:
         case this.keys.up:
         case this.keys.left:
@@ -186,7 +187,7 @@ export default {
         case this.keys.space:
         case this.keys.enter:
         case this.keys.tab:
-        case this.keys.shift:
+        case e.shiftKey:
           // ignore otherwise the menu will show
           break;
         case this.keys.down:
@@ -197,7 +198,7 @@ export default {
       }
     },
     onTextBoxKeyDown(e) {
-      switch (e.keyCode) {
+      switch (e.code) {
         case this.keys.tab:
           // hide menu
           this.hideMenu();
@@ -228,7 +229,7 @@ export default {
 
         // retrieve the first option in the menu
         option = this.getFirstOption();
-        console.log('option', option);
+        console.log('first option', option);
 
         // highlight the first option
         this.highlightOption(option);
@@ -240,7 +241,6 @@ export default {
       } else {
         // get options based on the value
         options = this.getOptions(value);
-        console.log('options', options);
 
         // if there are options
         if (options.length > 0) {
@@ -306,8 +306,7 @@ export default {
       return filtered;
     },
     getFirstOption() {
-      return document.getElementById('autocomplete-options--destination')
-        .firstChild;
+      return document.getElementById('autocomplete-options--destination').firstChild;
     },
     getPreviousOption() {
       return document.getElementById(this.activeOptionId).previousSibling;
@@ -348,27 +347,14 @@ export default {
     buildMenu(options) {
       this.clearOptions();
       this.activeOptionId = '';
-
-      // if (options.length) {
-      //   for (let i = 0; i < options.length; i++) {
-      //     this.menu.append(this.getOptionHtml(i, options[i]));
-      //   }
-      // } else {
-      //   this.menu.append(this.getNoResultsOptionHtml());
-      // }
       this.results = options;
-      // TODO: scroll to top of menu
-      // this.menu.scrollTop(this.menu.scrollTop());
+      this.$nextTick(() => {
+        document.getElementById('autocomplete-options--destination').scrollTop = 0;
+      });
     },
     showMenu() {
       this.menuOpen = true;
     },
-    // updateSelectBox() {
-    //   const t = this.inputValue.trim();
-    //   const matchingSelectOption = this.getMatchingOption(t);
-    //   // TODO: set this.selected value
-    //   // matchingSelectOption ? this.select.val(matchingSelectOption.value) : this.select.val('');
-    // },
     hideMenu() {
       this.menuOpen = false;
       this.activeOptionId = '';
@@ -392,9 +378,6 @@ export default {
       return matchedOption;
     },
     setValue(val) {
-      // populates the text box and hidden select box
-      console.log('value to set', val);
-      // this.select.val(val); // set the select's value to val
       const text = this.getOption(val).name;
       if (val.trim().length > 0) {
         this.inputValue = text;
@@ -409,7 +392,6 @@ export default {
       this.$refs.destination.focus();
     },
     selectOption(option) {
-      console.log('option to set', option);
       const value = option.getAttribute('data-option-value');
       this.setValue(value);
       this.hideMenu();
@@ -420,9 +402,8 @@ export default {
       this.selectOption(option);
     },
     onDocumentClick(e) {
-      console.log('clicking on document', e.target.closest('div.autocomplete'));
+      // if clicking anywhere but a descendent of the autocomplete, close the menu
       if (!e.target.closest('div.autocomplete')) {
-        console.log('clicked outside of autocomplete');
         this.hideMenu();
         this.removeTextBoxFocus();
       } else {
@@ -435,7 +416,6 @@ export default {
       const options = this.getAllOptions();
       this.buildMenu(options);
       this.showMenu();
-      // typeof t.currentTarget.select === 'function' && t.currentTarget.select();
     },
     onTextBoxFocus() {
       this.isFocused = true;
