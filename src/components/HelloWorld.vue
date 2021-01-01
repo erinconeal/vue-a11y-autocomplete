@@ -37,17 +37,28 @@
           :class="{ hidden: !menuOpen }"
           @keydown="onMenuKeyDown"
         >
-          <li
-            v-for="option in results"
-            :key="option.code"
-            role="option"
-            tabindex="-1"
-            :id="`autocomplete-option--${option.code}`"
-            :data-option-value="option.code"
-            @click="onOptionClick"
-          >
-            {{ option.name }}
+          <template v-if="results.length">
+            <li
+              v-for="(option, i) in results"
+              :key="option.code"
+              role="option"
+              tabindex="-1"
+              :id="`autocomplete-option--${option.code}`"
+              :data-option-value="option.code"
+              :aria-selected="i === indexCounter"
+              :ref="`autocomplete-option-index--${i}`"
+              @click="onOptionClick"
+            >
+              {{ option.name }}
+            </li>
+          </template>
+          <template v-else>
+            <li
+              id="autocomplete-option--NoResults"
+            >
+            No results
           </li>
+          </template>
         </ul>
         <div aria-live="polite" role="status" class="visually-hidden">
           <span v-if="results.length === 0">No results.</span>
@@ -86,6 +97,7 @@ export default {
       isFocused: false,
       menuOpen: false,
       results: [],
+      indexCounter: -1,
     };
   },
   // computed: {
@@ -106,7 +118,8 @@ export default {
           break;
         // Focus the next menu option. If it’s the last menu option, do nothing.
         case this.keys.down:
-          this.onOptionDownArrow(t);
+          // this.onOptionDownArrow(t);
+          this.onArrowDown(t);
           break;
         // Select the currently highlighted option and focus the text box.
         case this.keys.enter:
@@ -156,17 +169,23 @@ export default {
       }
       t.preventDefault();
     },
-    onOptionUpArrow(e) {
-      if (this.isOptionSelected()) {
-        const previousOption = this.getPreviousOption();
-        if (previousOption) {
-          this.highlightOption(previousOption);
-        } else {
-          this.focusTextBox();
-          this.hideMenu();
-        }
+    onOptionUpArrow() {
+      // if (this.isOptionSelected()) {
+      //   const previousOption = this.getPreviousOption();
+      //   if (previousOption) {
+      //     this.highlightOption(previousOption);
+      //   } else {
+      //     this.focusTextBox();
+      //     this.hideMenu();
+      //   }
+      // }
+      if (this.indexCounter > 0) {
+        this.indexCounter = this.indexCounter - 1;
+      } else {
+        this.focusTextBox();
+        this.hideMenu();
       }
-      e.preventDefault();
+      // e.preventDefault();
     },
     isOptionSelected() {
       return this.activeOptionId;
@@ -187,7 +206,7 @@ export default {
         case this.keys.space:
         case this.keys.enter:
         case this.keys.tab:
-        case e.shiftKey:
+        // case e.shiftKey:
           // ignore otherwise the menu will show
           break;
         case this.keys.down:
@@ -228,12 +247,13 @@ export default {
         this.showMenu();
 
         // retrieve the first option in the menu
-        option = this.getFirstOption();
-        console.log('first option', option);
+        // option = this.getFirstOption();
+        // console.log('first option', option);
 
         // highlight the first option
-        this.highlightOption(option);
+        // this.highlightOption(option);
 
+        this.onArrowDown(e);
         /*
         When there’s a value that doesn’t have
         an exact match show the matching options
@@ -358,6 +378,7 @@ export default {
     hideMenu() {
       this.menuOpen = false;
       this.activeOptionId = '';
+      this.indexCounter = -1;
       this.clearOptions();
     },
     removeTextBoxFocus() {
@@ -429,6 +450,15 @@ export default {
     },
     clearOptions() {
       this.results = [];
+    },
+    onArrowDown(e) {
+      if (this.indexCounter < this.results.length) {
+        this.indexCounter = this.indexCounter + 1;
+        this.$nextTick(() => {
+          this.$refs[`autocomplete-option-index--${this.indexCounter}`][0].focus();
+        });
+      }
+      e.preventDefault();
     },
   },
   mounted() {
