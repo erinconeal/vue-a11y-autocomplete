@@ -47,7 +47,7 @@
               :data-option-value="option.code"
               :aria-selected="i === indexCounter"
               :ref="`autocomplete-option-index--${i}`"
-              @click="onOptionClick"
+              @click="onOptionClick(option)"
             >
               {{ option.name }}
             </li>
@@ -76,6 +76,7 @@
 /* eslint-disable no-console */
 /* eslint-disable max-len */
 /* eslint-disable no-plusplus */
+/* eslint-disable no-alert */
 import countries from '../countries';
 
 export default {
@@ -93,7 +94,6 @@ export default {
         right: 'ArrowRight',
       },
       inputValue: '',
-      activeOptionId: '',
       isFocused: false,
       menuOpen: false,
       results: [],
@@ -107,7 +107,12 @@ export default {
   // },
   methods: {
     submit() {
-      console.log('value to submit');
+      const foundCountry = countries.find(c => c.name === this.inputValue);
+      if (foundCountry) {
+        alert(`Submitting country ${foundCountry.name}`);
+      } else {
+        alert('Please submit a country from the autocomplete.');
+      }
     },
     onMenuKeyDown(t) {
       switch (t.code) {
@@ -118,8 +123,7 @@ export default {
           break;
         // Focus the next menu option. If it’s the last menu option, do nothing.
         case this.keys.down:
-          // this.onOptionDownArrow(t);
-          this.onArrowDown(t);
+          this.onOptionDownArrow(t);
           break;
         // Select the currently highlighted option and focus the text box.
         case this.keys.enter:
@@ -140,64 +144,50 @@ export default {
           break;
         // Focus the text box (so users can continue typing).
         default:
-          this.$refs.destination.focus();
+          this.focusTextBox();
       }
     },
     onOptionEnter(e) {
-      if (this.isOptionSelected()) {
-        this.selectActiveOption();
-      }
+      this.inputValue = this.results[this.indexCounter].name;
+      this.hideMenu();
+      this.focusTextBox();
       // we don't want form to submit
       e.preventDefault();
     },
     onOptionSpace(e) {
-      if (this.isOptionSelected()) {
-        this.selectActiveOption();
-        // we don't want a space to be added to text box
-        e.preventDefault();
-      }
+      this.inputValue = this.results[this.indexCounter].name;
+      this.hideMenu();
+      this.focusTextBox();
+      // we don't want a space to be added to text box
+      e.preventDefault();
     },
     onOptionEscape() {
       this.clearOptions();
       this.hideMenu();
       this.focusTextBox();
     },
-    onOptionDownArrow(t) {
-      const nextOption = this.getNextOption();
-      if (nextOption) {
-        this.highlightOption(nextOption);
+    onOptionDownArrow(e) {
+      if (this.indexCounter < this.results.length - 1) {
+        this.indexCounter = this.indexCounter + 1;
+        this.$nextTick(() => {
+          this.$refs[`autocomplete-option-index--${this.indexCounter}`][0].focus();
+        });
       }
-      t.preventDefault();
+      e.preventDefault();
     },
     onOptionUpArrow() {
-      // if (this.isOptionSelected()) {
-      //   const previousOption = this.getPreviousOption();
-      //   if (previousOption) {
-      //     this.highlightOption(previousOption);
-      //   } else {
-      //     this.focusTextBox();
-      //     this.hideMenu();
-      //   }
-      // }
       if (this.indexCounter > 0) {
         this.indexCounter = this.indexCounter - 1;
       } else {
         this.focusTextBox();
         this.hideMenu();
       }
-      // e.preventDefault();
-    },
-    isOptionSelected() {
-      return this.activeOptionId;
-    },
-    selectActiveOption() {
-      const activeOption = this.getActiveOption();
-      this.selectOption(activeOption);
-    },
-    getActiveOption() {
-      return document.getElementById(this.activeOptionId);
     },
     onTextBoxKeyUp(e) {
+      if (e.shiftKey) {
+        return;
+      }
+
       switch (e.code) {
         case this.keys.esc:
         case this.keys.up:
@@ -206,7 +196,6 @@ export default {
         case this.keys.space:
         case this.keys.enter:
         case this.keys.tab:
-        // case e.shiftKey:
           // ignore otherwise the menu will show
           break;
         case this.keys.down:
@@ -224,19 +213,16 @@ export default {
           this.removeTextBoxFocus();
           break;
         default:
-          this.$refs.destination.focus();
+          this.focusTextBox();
       }
     },
     onTextBoxDownPressed(e) {
-      console.log('down arrow pressed on text box', e);
-      let option;
       let options;
       const value = this.inputValue.trim();
       /*
-        When the value is empty or if it exactly
-        matches an option show the entire menu
+        When the value is empty show the entire menu
       */
-      if (value.length === 0 || this.isExactMatch(value)) {
+      if (value.length === 0) {
         // get options based on the value
         options = this.getAllOptions();
 
@@ -246,14 +232,7 @@ export default {
         // show the menu
         this.showMenu();
 
-        // retrieve the first option in the menu
-        // option = this.getFirstOption();
-        // console.log('first option', option);
-
-        // highlight the first option
-        // this.highlightOption(option);
-
-        this.onArrowDown(e);
+        this.onOptionDownArrow(e);
         /*
         When there’s a value that doesn’t have
         an exact match show the matching options
@@ -270,11 +249,7 @@ export default {
           // show the menu
           this.showMenu();
 
-          // retrieve the first option in the menu
-          option = this.getFirstOption();
-
-          // highlight the first option
-          this.highlightOption(option);
+          this.onOptionDownArrow(e);
         }
       }
     },
@@ -292,10 +267,6 @@ export default {
         // show the menu
         this.showMenu();
       }
-
-      // update the select box value which
-      // the server uses to process the data
-      // this.updateSelectBox();
     },
     getOptions(inputValue) {
       // return countries.filter(country => country.name.toLowerCase().includes(this.inputValue.toLowerCase()));
@@ -325,45 +296,6 @@ export default {
       }
       return filtered;
     },
-    getFirstOption() {
-      return document.getElementById('autocomplete-options--destination').firstChild;
-    },
-    getPreviousOption() {
-      return document.getElementById(this.activeOptionId).previousSibling;
-    },
-    getNextOption() {
-      return document.getElementById(this.activeOptionId).nextSibling;
-    },
-    highlightOption(option) {
-      // if there’s a currently selected option
-      if (this.activeOptionId) {
-        // get the option
-        const activeOption = this.getOptionById(this.activeOptionId);
-
-        // unselect the option
-        activeOption.setAttribute('aria-selected', 'false');
-      }
-
-      // set new option to selected
-      option.setAttribute('aria-selected', 'true');
-
-      // TODO
-      // If the option isn’t visible within the menu
-      // if (!this.isElementVisible(option.parent(), option)) {
-      //   // make it visible by setting its position inside the menu
-      //   option.parent().scrollTop(option.parent().scrollTop() + option.position().top);
-      // }
-
-      // store new option for next time
-      this.activeOptionId = option.id;
-
-      // focus the option
-      option.focus();
-    },
-    isElementVisible() {},
-    getOptionById(id) {
-      return document.getElementById(id);
-    },
     buildMenu(options) {
       this.clearOptions();
       this.activeOptionId = '';
@@ -381,46 +313,22 @@ export default {
       this.indexCounter = -1;
       this.clearOptions();
     },
+    clearOptions() {
+      this.results = [];
+    },
     removeTextBoxFocus() {
       this.isFocused = false;
     },
-    isExactMatch(option) {
-      return this.getMatchingOption(option);
-    },
-    getMatchingOption(option) {
-      let matchedOption = null;
-      const options = countries;
-      for (let i = 0; i < options.length; i++) {
-        if (options[i].name.toLowerCase() === option.toLowerCase()) {
-          matchedOption = options[i];
-          break;
-        }
-      }
-      return matchedOption;
-    },
-    setValue(val) {
-      const text = this.getOption(val).name;
-      if (val.trim().length > 0) {
-        this.inputValue = text;
-      } else {
-        this.inputValue = '';
-      }
-    },
-    getOption(value) {
-      return countries.find(country => country.code === value);
+    onTextBoxFocus() {
+      this.isFocused = true;
     },
     focusTextBox() {
       this.$refs.destination.focus();
     },
-    selectOption(option) {
-      const value = option.getAttribute('data-option-value');
-      this.setValue(value);
+    onOptionClick(option) {
+      this.inputValue = option.name;
       this.hideMenu();
       this.focusTextBox();
-    },
-    onOptionClick(e) {
-      const option = e.target;
-      this.selectOption(option);
     },
     onDocumentClick(e) {
       // if clicking anywhere but a descendent of the autocomplete, close the menu
@@ -432,14 +340,14 @@ export default {
       }
       return null;
     },
-    onTextBoxClick() {
+    onTextBoxClick(event) {
       this.clearOptions();
       const options = this.getAllOptions();
       this.buildMenu(options);
       this.showMenu();
-    },
-    onTextBoxFocus() {
-      this.isFocused = true;
+      if (typeof event.currentTarget.select === 'function') {
+        event.currentTarget.select();
+      }
     },
     onArrowClick() {
       this.clearOptions();
@@ -447,18 +355,6 @@ export default {
       this.buildMenu(options);
       this.showMenu();
       this.focusTextBox();
-    },
-    clearOptions() {
-      this.results = [];
-    },
-    onArrowDown(e) {
-      if (this.indexCounter < this.results.length) {
-        this.indexCounter = this.indexCounter + 1;
-        this.$nextTick(() => {
-          this.$refs[`autocomplete-option-index--${this.indexCounter}`][0].focus();
-        });
-      }
-      e.preventDefault();
     },
   },
   mounted() {
