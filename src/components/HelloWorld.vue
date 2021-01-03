@@ -5,7 +5,7 @@
       <label for="destination">
         <span>Destination</span>
       </label>
-      <div class="autocomplete">
+      <div class="autocomplete mt-1">
         <input
           aria-owns="autocomplete-options--destination"
           autocapitalize="none"
@@ -21,7 +21,7 @@
           @click="onTextBoxClick"
           @focus="onTextBoxFocus"
           v-model="inputValue"
-          :class="{ 'autocomplete-isFocused': isFocused }"
+          :class="{ 'autocomplete-isInputFieldFocused': isInputFieldFocused }"
         />
         <svg
           focusable="false"
@@ -43,8 +43,6 @@
               :key="option.code"
               role="option"
               tabindex="-1"
-              :id="`autocomplete-option--${option.code}`"
-              :data-option-value="option.code"
               :aria-selected="i === indexCounter"
               :ref="`autocomplete-option-index--${i}`"
               @click="onOptionClick(option)"
@@ -67,15 +65,12 @@
           </span>
         </div>
       </div>
-      <button type="button" @click="submit">Submit</button>
+      <button type="button" @click="submit" class="btn mt-3">Submit</button>
     </div>
   </div>
 </template>
 
 <script>
-/* eslint-disable no-console */
-/* eslint-disable max-len */
-/* eslint-disable no-plusplus */
 /* eslint-disable no-alert */
 import countries from '../countries';
 
@@ -94,24 +89,19 @@ export default {
         right: 'ArrowRight',
       },
       inputValue: '',
-      isFocused: false,
+      isInputFieldFocused: false,
       menuOpen: false,
       results: [],
       indexCounter: -1,
     };
   },
-  // computed: {
-  //   results() {
-  //     return countries.filter(country => country.name.toLowerCase().includes(this.inputValue.toLowerCase()));
-  //   },
-  // },
   methods: {
     submit() {
       const foundCountry = countries.find(c => c.name === this.inputValue);
       if (foundCountry) {
         alert(`Submitting country ${foundCountry.name}`);
       } else {
-        alert('Please submit a country from the autocomplete.');
+        alert('Please submit a valid country from the autocomplete.');
       }
     },
     onMenuKeyDown(t) {
@@ -135,7 +125,7 @@ export default {
           break;
         // Hide the menu and focus the text box.
         case this.keys.esc:
-          this.onOptionEscape(t);
+          this.onOptionEscape();
           break;
         // Hide the menu.
         case this.keys.tab:
@@ -175,13 +165,17 @@ export default {
       }
       e.preventDefault();
     },
-    onOptionUpArrow() {
+    onOptionUpArrow(e) {
       if (this.indexCounter > 0) {
         this.indexCounter = this.indexCounter - 1;
+        this.$nextTick(() => {
+          this.$refs[`autocomplete-option-index--${this.indexCounter}`][0].focus();
+        });
       } else {
         this.focusTextBox();
         this.hideMenu();
       }
+      e.preventDefault();
     },
     onTextBoxKeyUp(e) {
       if (e.shiftKey) {
@@ -217,88 +211,22 @@ export default {
       }
     },
     onTextBoxDownPressed(e) {
-      let options;
-      const value = this.inputValue.trim();
-      /*
-        When the value is empty show the entire menu
-      */
-      if (value.length === 0) {
-        // get options based on the value
-        options = this.getAllOptions();
-
-        // build the menu based on the options
-        this.buildMenu(options);
-
-        // show the menu
-        this.showMenu();
-
-        this.onOptionDownArrow(e);
-        /*
-        When there’s a value that doesn’t have
-        an exact match show the matching options
-      */
-      } else {
-        // get options based on the value
-        options = this.getOptions(value);
-
-        // if there are options
-        if (options.length > 0) {
-          // build the menu based on the options
-          this.buildMenu(options);
-
-          // show the menu
-          this.showMenu();
-
-          this.onOptionDownArrow(e);
-        }
-      }
+      const options = this.getOptions();
+      this.buildMenu(options);
+      this.showMenu();
+      this.onOptionDownArrow(e);
     },
-    onTextBoxType(e) {
-      // only show options if user typed something
-      const value = e.target.value;
-
-      if (value.trim().length > 0) {
-        // get options based on value
-        const options = this.getOptions(value.trim().toLowerCase());
-
-        // build the menu based on the options
-        this.buildMenu(options);
-
-        // show the menu
-        this.showMenu();
-      }
+    onTextBoxType() {
+      const options = this.getOptions();
+      this.buildMenu(options);
+      this.showMenu();
     },
-    getOptions(inputValue) {
-      // return countries.filter(country => country.name.toLowerCase().includes(this.inputValue.toLowerCase()));
-      const matches = [];
-
-      // Loop through each of the option elements
-      for (let i = 0; i < countries.length; i++) {
-        const countryObj = countries[i];
-        // if the option has a value and the option’s text node matches the user-typed value
-        if (countryObj.code.trim().length > 0 && countryObj.name.toLowerCase().includes(inputValue.toLowerCase())) {
-          // push an object representation to the matches array
-          matches.push(countryObj);
-        }
-      }
-      return matches;
-    },
-    getAllOptions() {
-      const filtered = [];
-      const options = countries;
-      let option;
-      for (let i = 0; i < options.length; i++) {
-        option = options[i];
-        const value = option.code;
-        if (value.trim().length > 0) {
-          filtered.push(option);
-        }
-      }
-      return filtered;
+    getOptions() {
+      return countries.filter(country => country.name.toLowerCase()
+        .includes(this.inputValue.toLowerCase()));
     },
     buildMenu(options) {
       this.clearOptions();
-      this.activeOptionId = '';
       this.results = options;
       this.$nextTick(() => {
         document.getElementById('autocomplete-options--destination').scrollTop = 0;
@@ -309,7 +237,6 @@ export default {
     },
     hideMenu() {
       this.menuOpen = false;
-      this.activeOptionId = '';
       this.indexCounter = -1;
       this.clearOptions();
     },
@@ -317,10 +244,10 @@ export default {
       this.results = [];
     },
     removeTextBoxFocus() {
-      this.isFocused = false;
+      this.isInputFieldFocused = false;
     },
     onTextBoxFocus() {
-      this.isFocused = true;
+      this.isInputFieldFocused = true;
     },
     focusTextBox() {
       this.$refs.destination.focus();
@@ -342,7 +269,7 @@ export default {
     },
     onTextBoxClick(event) {
       this.clearOptions();
-      const options = this.getAllOptions();
+      const options = this.getOptions();
       this.buildMenu(options);
       this.showMenu();
       if (typeof event.currentTarget.select === 'function') {
@@ -351,7 +278,7 @@ export default {
     },
     onArrowClick() {
       this.clearOptions();
-      const options = this.getAllOptions();
+      const options = this.getOptions();
       this.buildMenu(options);
       this.showMenu();
       this.focusTextBox();
@@ -372,14 +299,12 @@ h1,
 h2 {
   font-weight: normal;
 }
+
 ul {
   list-style-type: none;
   padding: 0;
 }
-/* li {
-  display: inline-block;
-  margin: 0 10px;
-} */
+
 a {
   color: #42b983;
 }
@@ -465,8 +390,32 @@ a {
   color: #ffffff;
 }
 
-.autocomplete-isFocused {
+.autocomplete-isInputFieldFocused {
   outline-offset: 0;
   outline: 3px solid #ecc94b;
+}
+
+.btn {
+  font-weight: 600;
+  background-color: #4fc08d;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  border: 1px solid #4fc08d;
+  font-size: 0.9em;
+  color: #fff;
+  margin: 0.2em 0;
+  width: 200px;
+  text-align: center;
+  padding: 12px 24px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.mt-1 {
+  margin-top: 1rem;
+}
+
+.mt-3 {
+  margin-top: 3rem;
 }
 </style>
