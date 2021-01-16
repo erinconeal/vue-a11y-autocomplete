@@ -51,18 +51,12 @@
             </li>
           </template>
           <template v-else>
-            <li
-              id="autocomplete-option--NoResults"
-            >
-            No results
-          </li>
+            <li id="autocomplete-option--NoResults">No results</li>
           </template>
         </ul>
         <div aria-live="polite" role="status" class="visually-hidden">
           <span v-if="results.length === 0">No results.</span>
-          <span v-else>
-            {{ results.length }} results available.
-          </span>
+          <span v-else> {{ results.length }} results available. </span>
         </div>
       </div>
       <button type="button" @click="submit" class="btn mt-3">Submit</button>
@@ -97,7 +91,7 @@ export default {
   },
   methods: {
     submit() {
-      const foundCountry = countries.find(c => c.name === this.inputValue);
+      const foundCountry = countries.find((c) => c.name === this.inputValue);
       if (foundCountry) {
         alert(`Submitting country ${foundCountry.name}`);
       } else {
@@ -222,8 +216,9 @@ export default {
       this.showMenu();
     },
     getOptions() {
-      return countries.filter(country => country.name.toLowerCase()
-        .includes(this.inputValue.toLowerCase()));
+      return countries.filter((country) =>
+        country.name.toLowerCase().includes(this.inputValue.toLowerCase())
+      );
     },
     buildMenu(options) {
       this.clearOptions();
@@ -329,7 +324,7 @@ a {
   position: relative;
 }
 
-.autocomplete [type="text"] {
+.autocomplete [type='text'] {
   /* -webkit-appearance: none; */
   border-radius: 0;
   box-sizing: border-box;
@@ -350,7 +345,7 @@ a {
   fill: #4a5568;
 }
 
-.autocomplete [role="listbox"] {
+.autocomplete [role='listbox'] {
   margin: 0;
   max-height: 12em;
   overflow-y: auto;
@@ -371,7 +366,7 @@ a {
   border: 2px solid #718096;
 }
 
-.autocomplete [role="option"] {
+.autocomplete [role='option'] {
   line-height: 22px;
   padding: 0.5em;
   display: block;
@@ -384,7 +379,7 @@ a {
   display: none;
 }
 
-.autocomplete [role="option"][aria-selected="true"] {
+.autocomplete [role='option'][aria-selected='true'] {
   background-color: #005ea5;
   border-color: #005ea5;
   color: #ffffff;
