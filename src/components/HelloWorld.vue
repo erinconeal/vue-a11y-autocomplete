@@ -64,11 +64,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 /* eslint-disable no-alert */
+import Vue from 'vue';
 import countries from '../countries';
 
-export default {
+interface Countries {
+  name?: string,
+  code?: string,
+}
+
+export default Vue.extend({
   name: 'HelloWorld',
   data() {
     return {
@@ -98,7 +104,7 @@ export default {
         alert('Please submit a valid country from the autocomplete.');
       }
     },
-    onMenuKeyDown(t) {
+    onMenuKeyDown(t: KeyboardEvent) {
       switch (t.code) {
         // If the first option is focused, set focus to the text box.
         // Otherwise set focus to the previous option.
@@ -131,15 +137,15 @@ export default {
           this.focusTextBox();
       }
     },
-    onOptionEnter(e) {
-      this.inputValue = this.results[this.indexCounter].name;
+    onOptionEnter(e: Event) {
+      this.inputValue = (this.results[this.indexCounter] as any).name;
       this.hideMenu();
       this.focusTextBox();
       // we don't want form to submit
       e.preventDefault();
     },
-    onOptionSpace(e) {
-      this.inputValue = this.results[this.indexCounter].name;
+    onOptionSpace(e: Event) {
+      this.inputValue = (this.results[this.indexCounter] as any).name;
       this.hideMenu();
       this.focusTextBox();
       // we don't want a space to be added to text box
@@ -150,20 +156,20 @@ export default {
       this.hideMenu();
       this.focusTextBox();
     },
-    onOptionDownArrow(e) {
+    onOptionDownArrow(e: Event) {
       if (this.indexCounter < this.results.length - 1) {
         this.indexCounter = this.indexCounter + 1;
         this.$nextTick(() => {
-          this.$refs[`autocomplete-option-index--${this.indexCounter}`][0].focus();
+          (this.$refs[`autocomplete-option-index--${this.indexCounter}`] as any)[0].focus();
         });
       }
       e.preventDefault();
     },
-    onOptionUpArrow(e) {
+    onOptionUpArrow(e: Event) {
       if (this.indexCounter > 0) {
         this.indexCounter = this.indexCounter - 1;
         this.$nextTick(() => {
-          this.$refs[`autocomplete-option-index--${this.indexCounter}`][0].focus();
+          (this.$refs[`autocomplete-option-index--${this.indexCounter}`] as any)[0].focus();
         });
       } else {
         this.focusTextBox();
@@ -171,7 +177,7 @@ export default {
       }
       e.preventDefault();
     },
-    onTextBoxKeyUp(e) {
+    onTextBoxKeyUp(e: KeyboardEvent) {
       if (e.shiftKey) {
         return;
       }
@@ -190,10 +196,10 @@ export default {
           this.onTextBoxDownPressed(e);
           break;
         default:
-          this.onTextBoxType(e);
+          this.onTextBoxType();
       }
     },
-    onTextBoxKeyDown(e) {
+    onTextBoxKeyDown(e: KeyboardEvent) {
       switch (e.code) {
         case this.keys.tab:
           // hide menu
@@ -204,7 +210,7 @@ export default {
           this.focusTextBox();
       }
     },
-    onTextBoxDownPressed(e) {
+    onTextBoxDownPressed(e: Event) {
       const options = this.getOptions();
       this.buildMenu(options);
       this.showMenu();
@@ -220,11 +226,13 @@ export default {
         country.name.toLowerCase().includes(this.inputValue.toLowerCase())
       );
     },
-    buildMenu(options) {
+    buildMenu(options: any) { //TODO: replace 'any'
       this.clearOptions();
       this.results = options;
       this.$nextTick(() => {
-        document.getElementById('autocomplete-options--destination').scrollTop = 0;
+        (document.getElementById(
+          'autocomplete-options--destination'
+        ) as HTMLUListElement).scrollTop = 0;
       });
     },
     showMenu() {
@@ -245,16 +253,16 @@ export default {
       this.isInputFieldFocused = true;
     },
     focusTextBox() {
-      this.$refs.destination.focus();
+      (this.$refs.destination as HTMLInputElement).focus();
     },
-    onOptionClick(option) {
+    onOptionClick(option: { name: string; code: string }) {
       this.inputValue = option.name;
       this.hideMenu();
       this.focusTextBox();
     },
-    onDocumentClick(e) {
+    onDocumentClick(e: Event) {
       // if clicking anywhere but a descendent of the autocomplete, close the menu
-      if (!e.target.closest('div.autocomplete')) {
+      if (!(e.target as Element).closest('div.autocomplete')) {
         this.hideMenu();
         this.removeTextBoxFocus();
       } else {
@@ -262,14 +270,15 @@ export default {
       }
       return null;
     },
-    onTextBoxClick(event) {
+    onTextBoxClick(event: Event) {
       this.clearOptions();
       const options = this.getOptions();
       this.buildMenu(options);
       this.showMenu();
-      if (typeof event.currentTarget.select === 'function') {
-        event.currentTarget.select();
-      }
+      // TODO:
+      // if (typeof event.currentTarget.select === 'function') {
+      //   event.currentTarget.select();
+      // }
     },
     onArrowClick() {
       this.clearOptions();
@@ -285,7 +294,7 @@ export default {
   beforeDestroy() {
     document.removeEventListener('click', this.onDocumentClick);
   },
-};
+});
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
